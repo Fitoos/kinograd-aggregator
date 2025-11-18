@@ -1,108 +1,21 @@
-﻿<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎬 КиноГрад (С Подборками)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Темная цветовая схема */
-        body {
-            background-color: #1a202c; /* bg-gray-900 */
-            color: #f7fafc; /* text-gray-100 */
-        }
-        /* Стиль для модального окна */
-        .modal {
-            background-color: rgba(0, 0, 0, 0.85);
-            display: none;
-        }
-
-            .modal.open {
-                display: flex;
-            }
-        /* Адаптивный постер в модальном окне */
-        .modal-poster {
-            aspect-ratio: 2/3;
-        }
-        /* Стиль для карточек */
-        .movie-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            background-color: #2d3748; /* bg-gray-700 */
-        }
-
-            .movie-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 25px -5px rgba(246, 115, 0, 0.2); /* Оранжевая тень */
-            }
-    </style>
-</head>
-<body>
-
-    <header class="bg-gray-800 p-4 shadow-xl sticky top-0 z-10 border-b-4 border-orange-600">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-            <h1 class="text-3xl font-extrabold text-white mb-3 md:mb-0 cursor-pointer" onclick="fetchMovies()">⭐ КиноГрад</h1>
-            <div class="w-full md:w-1/3">
-                <input type="text"
-                       id="search-input"
-                       placeholder="Найти фильм или сериал..."
-                       class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-white focus:ring-2 focus:ring-orange-500">
-            </div>
-        </div>
-    </header>
-
-    <div class="bg-gray-800 py-4 border-b border-gray-700">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
-
-            <div class="flex flex-wrap gap-4 items-center">
-                <label for="content-type" class="text-gray-400 font-semibold text-sm">ТИП:</label>
-                <select id="content-type" class="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-orange-500" onchange="fetchMovies()">
-                    <option value="movie">Фильмы</option>
-                    <option value="tv">Сериалы</option>
-                </select>
-
-                <label for="genre-filter" class="text-gray-400 font-semibold text-sm">ЖАНР:</label>
-                <select id="genre-filter" class="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:ring-orange-500" onchange="fetchMovies()">
-                    <option value="">Все жанры</option>
-                </select>
-            </div>
-
-            <button onclick="fetchTrending()" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
-                🔥 Тренды недели
-            </button>
-
-        </div>
-    </div>
-
-    <main class="max-w-7xl mx-auto p-6">
-        <h2 id="section-title" class="text-3xl font-semibold mb-8 text-white">Самые популярные Фильмы</h2>
-
-        <div id="movies-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        </div>
-
-        <p id="message" class="text-center text-xl mt-10 text-gray-400">Загрузка данных...</p>
-    </main>
-
-    <div id="movie-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4">
-        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden relative">
-
+<div id="movie-modal" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden relative" id="modal-inner">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-orange-400 hover:text-orange-600 text-3xl font-bold p-1 leading-none z-20">
                 &times;
             </button>
-
+            
             <div id="modal-content" class="p-6">
-            </div>
+                </div>
         </div>
     </div>
 
     <script>
         // === ВАШ КЛЮЧ API - ДОБАВЛЕН ===
         const API_KEY = '6ba774858ac337da097ab96ca608fce8';
-
+        
         const BASE_URL = 'https://api.themoviedb.org/3';
-        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
-        // Увеличенное количество страниц для загрузки
-        const PAGE_COUNT = 3;
+        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/'; 
+        const PAGE_COUNT = 3; 
 
         const container = document.getElementById('movies-container');
         const messageElement = document.getElementById('message');
@@ -112,6 +25,90 @@
         const modalContent = document.getElementById('modal-content');
         const genreFilter = document.getElementById('genre-filter');
         const contentTypeSelect = document.getElementById('content-type');
+        const body = document.body; // Получаем элемент <body> для управления прокруткой
+
+
+        // ====================================================================================================
+        // НОВЫЙ КОД: ОБРАБОТЧИК ЗАКРЫТИЯ ПО КЛИКУ ВНЕ ОКНА
+        // ====================================================================================================
+
+        modal.addEventListener('click', (e) => {
+            // Если клик произошел ровно на модальном оверлее (элемент с ID 'movie-modal')
+            // и не на внутреннем блоке (ID 'modal-inner'), то закрываем его.
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        function closeModal() {
+            modal.classList.remove('open');
+            // НОВЫЙ КОД: Разрешаем прокрутку страницы
+            body.style.overflow = ''; 
+        }
+
+        async function showMovieDetails(itemId, contentType) {
+            // НОВЫЙ КОД: Блокируем прокрутку страницы
+            body.style.overflow = 'hidden'; 
+            
+            const itemType = contentType === 'person' || !contentType ? 'movie' : contentType; 
+
+            modalContent.innerHTML = `<p class="text-center text-gray-500">Загрузка деталей...</p>`;
+            modal.classList.add('open'); 
+
+            try {
+                const url = `${BASE_URL}/${itemType}/${itemId}?api_key=${API_KEY}&language=ru-RU`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Не удалось загрузить детали.');
+                
+                const details = await response.json();
+                
+                const title = details.title || details.name;
+                const date = details.release_date || details.first_air_date;
+                const releaseYear = date ? date.split('-')[0] : 'N/A';
+                const posterUrl = details.poster_path ? `${IMAGE_BASE_URL}w300${details.poster_path}` : 'https://via.placeholder.com/300x450?text=Нет+Постера';
+                const genres = details.genres ? details.genres.map(g => g.name).join(', ') : 'Неизвестно';
+                
+                let runtime = 'N/A';
+                if (details.runtime) {
+                    runtime = `${details.runtime} мин.`;
+                } else if (details.episode_run_time && details.episode_run_time.length > 0) {
+                    runtime = `${details.episode_run_time[0]} мин. / эпизод`;
+                }
+                
+                const rating = details.vote_average ? details.vote_average.toFixed(1) : 'N/A';
+                const overview = details.overview || 'Описание недоступно на русском языке.';
+
+                modalContent.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="md:w-1/3 flex-shrink-0">
+                            <img src="${posterUrl}" alt="${title}" class="w-full rounded-lg shadow-xl modal-poster">
+                        </div>
+                        
+                        <div class="md:w-2/3">
+                            <h3 class="text-3xl font-extrabold text-white mb-2">${title} (${releaseYear})</h3>
+                            
+                            <div class="flex flex-wrap items-center space-x-4 mb-4 text-sm text-gray-400">
+                                <span class="bg-orange-600 text-white px-3 py-1 rounded-full font-semibold text-base shadow-lg">
+                                    ★ ${rating}
+                                </span>
+                                <span>${runtime}</span>
+                                <span>${genres}</span>
+                            </div>
+
+                            <p class="text-white mb-3 font-semibold text-lg">Сюжет:</p>
+                            <p class="text-sm text-gray-300 max-h-40 overflow-y-auto pr-2">${overview}</p>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Ошибка при загрузке деталей:', error);
+                modalContent.innerHTML = `<p class="text-red-400 text-center">Произошла ошибка при загрузке деталей.</p>`;
+            }
+        }
+        
+        // --- Все остальные функции (fetchGenres, fetchMovies, fetchTrending, displayContent) остаются без изменений ---
+        // Ниже представлены функции, которые не изменились, но необходимы для работы сайта:
 
         // === 1. ЗАГРУЗКА СПИСКА ЖАНРОВ ===
         async function fetchGenres() {
@@ -119,7 +116,7 @@
                 const url = `${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=ru-RU`;
                 const response = await fetch(url);
                 const data = await response.json();
-
+                
                 if (data.genres) {
                     data.genres.forEach(genre => {
                         const option = document.createElement('option');
@@ -137,7 +134,7 @@
         // === 2. ПОЛУЧЕНИЕ И ОТОБРАЖЕНИЕ КОНТЕНТА ===
 
         async function fetchMovies(query = null) {
-
+            
             const contentType = contentTypeSelect.value;
             const selectedGenre = genreFilter.value;
             const isSearching = query && query.length > 0;
@@ -145,13 +142,13 @@
             messageElement.textContent = 'Загрузка данных...';
             messageElement.style.display = 'block';
             container.innerHTML = '';
-
+            
             let allResults = [];
             let typeTitle = contentType === 'movie' ? 'Фильмы' : 'Сериалы';
 
-            sectionTitle.textContent = isSearching
+            sectionTitle.textContent = isSearching 
                 ? `Результаты поиска по ${typeTitle}: "${query}"`
-                : selectedGenre
+                : selectedGenre 
                     ? `Популярные ${typeTitle} по жанру`
                     : `Самые популярные ${typeTitle}`;
 
@@ -168,20 +165,19 @@
 
                     const response = await fetch(url);
                     if (!response.ok) throw new Error('Ошибка сети или API ключ недействителен.');
-
+                    
                     const data = await response.json();
                     if (data.results) {
                         allResults = allResults.concat(data.results);
                     }
-                    // Если страниц меньше, чем мы запросили, или это поиск, выходим
                     if (isSearching || page >= data.total_pages) break;
                 }
-
+                
                 if (allResults.length > 0) {
                     displayContent(allResults);
                 } else {
-                    messageElement.textContent = isSearching
-                        ? `По запросу "${query}" ничего не найдено.`
+                    messageElement.textContent = isSearching 
+                        ? `По запросу "${query}" ничего не найдено.` 
                         : 'Контент не найден.';
                 }
 
@@ -190,24 +186,23 @@
                 messageElement.textContent = `Ошибка: ${error.message}`;
             }
         }
-
+        
         // === 3. ЛОГИКА ПОДБОРОК (ТРЕНДЫ) ===
 
         async function fetchTrending() {
             messageElement.textContent = 'Загрузка трендов недели...';
             messageElement.style.display = 'block';
             container.innerHTML = '';
-
+            
             sectionTitle.textContent = `🔥 В тренде на этой неделе (Фильмы и Сериалы)`;
 
             try {
-                // Эндпоинт /trending/all/week показывает тренды по фильмам и сериалам
                 const url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=ru-RU`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Ошибка при загрузке трендов.');
-
+                
                 const data = await response.json();
-
+                
                 if (data.results && data.results.length > 0) {
                     displayContent(data.results);
                 } else {
@@ -227,37 +222,36 @@
             messageElement.style.display = 'none';
 
             items.forEach(item => {
-                // Определяем тип контента: movie, tv, или unknown (если это тренд)
                 const contentType = item.media_type || contentTypeSelect.value;
-
+                
                 const title = item.title || item.name || 'Название недоступно';
                 const date = item.release_date || item.first_air_date;
                 const releaseYear = date ? date.split('-')[0] : 'N/A';
                 const voteAverage = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
-
+                
                 const posterPath = item.poster_path;
                 const posterUrl = posterPath ? `${IMAGE_BASE_URL}w500${posterPath}` : 'https://via.placeholder.com/500x750?text=Нет+Постера';
 
                 const card = document.createElement('div');
                 card.className = 'movie-card rounded-lg shadow-lg overflow-hidden';
-                // В трендах media_type может быть 'person', пропускаем их
+                
                 if (contentType !== 'person') {
                     card.onclick = () => showMovieDetails(item.id, contentType);
                 }
 
                 card.innerHTML = `
-                        <img src="${posterUrl}" alt="${title}" class="w-full object-cover aspect-[2/3] border-b border-gray-700">
-                        <div class="p-3">
-                            <h3 class="text-sm font-semibold truncate mb-1 text-white">${title}</h3>
-                            <div class="flex justify-between items-center text-xs text-gray-400">
-                                <span>${contentType === 'movie' ? 'Фильм' : contentType === 'tv' ? 'Сериал' : 'Контент'}: ${releaseYear}</span>
-                                <span class="font-bold text-orange-500">
-                                    <span class="mr-1">★</span>${voteAverage}
-                                </span>
-                            </div>
+                    <img src="${posterUrl}" alt="${title}" class="w-full object-cover aspect-[2/3] border-b border-gray-700">
+                    <div class="p-3">
+                        <h3 class="text-sm font-semibold truncate mb-1 text-white">${title}</h3>
+                        <div class="flex justify-between items-center text-xs text-gray-400">
+                            <span>${contentType === 'movie' ? 'Фильм' : contentType === 'tv' ? 'Сериал' : 'Контент'}: ${releaseYear}</span>
+                            <span class="font-bold text-orange-500">
+                                <span class="mr-1">★</span>${voteAverage}
+                            </span>
                         </div>
-                    `;
-
+                    </div>
+                `;
+                
                 container.appendChild(card);
             });
         }
@@ -269,74 +263,9 @@
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 const query = e.target.value.trim();
-                fetchMovies(query || null);
+                fetchMovies(query || null); 
             }, 500);
         });
-
-        // === 6. ЛОГИКА ДЕТАЛЕЙ (МОДАЛЬНОЕ ОКНО) ===
-
-        async function showMovieDetails(itemId, contentType) {
-            // Если тип контента неизвестен (например, в трендах), по умолчанию считаем его фильмом
-            const itemType = contentType === 'person' || !contentType ? 'movie' : contentType;
-
-            modalContent.innerHTML = `<p class="text-center text-gray-500">Загрузка деталей...</p>`;
-            modal.classList.add('open');
-
-            try {
-                const url = `${BASE_URL}/${itemType}/${itemId}?api_key=${API_KEY}&language=ru-RU`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Не удалось загрузить детали.');
-
-                const details = await response.json();
-
-                const title = details.title || details.name;
-                const date = details.release_date || details.first_air_date;
-                const releaseYear = date ? date.split('-')[0] : 'N/A';
-                const posterUrl = details.poster_path ? `${IMAGE_BASE_URL}w300${details.poster_path}` : 'https://via.placeholder.com/300x450?text=Нет+Постера';
-                const genres = details.genres ? details.genres.map(g => g.name).join(', ') : 'Неизвестно';
-                // Отображение времени выполнения в зависимости от типа
-                let runtime = 'N/A';
-                if (details.runtime) {
-                    runtime = `${details.runtime} мин.`;
-                } else if (details.episode_run_time && details.episode_run_time.length > 0) {
-                    runtime = `${details.episode_run_time[0]} мин. / эпизод`;
-                }
-
-                const rating = details.vote_average ? details.vote_average.toFixed(1) : 'N/A';
-                const overview = details.overview || 'Описание недоступно на русском языке.';
-
-                modalContent.innerHTML = `
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="md:w-1/3 flex-shrink-0">
-                                <img src="${posterUrl}" alt="${title}" class="w-full rounded-lg shadow-xl modal-poster">
-                            </div>
-
-                            <div class="md:w-2/3">
-                                <h3 class="text-3xl font-extrabold text-white mb-2">${title} (${releaseYear})</h3>
-
-                                <div class="flex flex-wrap items-center space-x-4 mb-4 text-sm text-gray-400">
-                                    <span class="bg-orange-600 text-white px-3 py-1 rounded-full font-semibold text-base shadow-lg">
-                                        ★ ${rating}
-                                    </span>
-                                    <span>${runtime}</span>
-                                    <span>${genres}</span>
-                                </div>
-
-                                <p class="text-white mb-3 font-semibold text-lg">Сюжет:</p>
-                                <p class="text-sm text-gray-300 max-h-40 overflow-y-auto pr-2">${overview}</p>
-                            </div>
-                        </div>
-                    `;
-
-            } catch (error) {
-                console.error('Ошибка при загрузке деталей:', error);
-                modalContent.innerHTML = `<p class="text-red-400 text-center">Произошла ошибка при загрузке деталей.</p>`;
-            }
-        }
-
-        function closeModal() {
-            modal.classList.remove('open');
-        }
 
         // Запуск при загрузке страницы: загружаем жанры, затем популярные фильмы
         fetchGenres().then(() => fetchMovies());
