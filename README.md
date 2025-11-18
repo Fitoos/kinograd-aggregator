@@ -1,1 +1,0 @@
-# kinograd-aggregator
